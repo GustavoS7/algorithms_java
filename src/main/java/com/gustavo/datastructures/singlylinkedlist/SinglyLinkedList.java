@@ -1,6 +1,6 @@
-package com.gustavo.datastructures.doublylinkedlist;
+package com.gustavo.datastructures.singlylinkedlist;
 
-public class DoublyLinkedList<T> implements Iterable<T> {
+public class SinglyLinkedList<T> implements Iterable<T> {
 
   private int size = 0;
   private Node<T> head = null;
@@ -9,11 +9,10 @@ public class DoublyLinkedList<T> implements Iterable<T> {
   // Classe interna Node para representação dos dados
   private static class Node<T> {
     private T data;
-    private Node<T> prev, next;
+    private Node<T> next;
 
     public Node(T data, Node<T> prev, Node<T> next) {
       this.data = data;
-      this.prev = prev;
       this.next = next;
     }
 
@@ -28,7 +27,7 @@ public class DoublyLinkedList<T> implements Iterable<T> {
     Node<T> trav = head;
     while (trav != null) {
       Node<T> next = trav.next;
-      trav.prev = trav.next = null;
+      trav.next = null;
       trav.data = null;
       trav = next;
     }
@@ -67,8 +66,8 @@ public class DoublyLinkedList<T> implements Iterable<T> {
     if (isEmpty()) {
       head = tail = new Node<T>(elem, null, null);
     } else {
-      head.prev = new Node<T>(elem, null, head);
-      head = head.prev;
+      Node<T> temp = new Node<T>(elem, null, head);
+      head = temp;
     }
     size++;
   }
@@ -92,7 +91,6 @@ public class DoublyLinkedList<T> implements Iterable<T> {
       temp = temp.next;
     }
     Node<T> newNode = new Node<T>(data, temp, temp.next);
-    temp.next.prev = newNode;
     temp.next = newNode;
 
     size++;
@@ -119,39 +117,76 @@ public class DoublyLinkedList<T> implements Iterable<T> {
     --size;
 
     if (isEmpty()) tail = null;
-    else head.prev = null;
 
     return data;
   }
 
-  // Remove o último valor da lista, O(1)
+  // Remove o último valor da lista, O(n)
   public T removeLast() {
     if (isEmpty()) throw new RuntimeException("Empty list");
 
+    Node<T> trav = head;
+
+    while (head.next.next != null) {
+      trav = trav.next;
+    }
+
     T data = tail.data;
-    tail = tail.prev;
+    tail = trav;
+
     --size;
 
     if (isEmpty()) head = null;
-    else tail.next = null;
+    else tail.next = trav;
 
     return data;
   }
 
-  // Remove um node arbitrário da lista, O(1)
+  // Remove um node arbitrário da lista, O(n)
   private T remove(Node<T> node) {
-    if (node.prev == null) return removeFirst();
     if (node.next == null) return removeLast();
 
-    node.next.prev = node.prev;
-    node.prev.next = node.next;
+    Node<T> trav = head;
+    Node<T> prev = null;
+
+    while (trav != null && trav != node) {
+      prev = trav;
+      trav = trav.next;
+    }
+
+    if (trav == null) return null;
+
+    if (prev == null) {
+      head = head.next;
+    } else {
+      prev.next = trav.next;
+    }
+
+    T data = trav.data;
+
+    trav.data = null;
+    trav.next = null;
+
+    size--;
+
+    return data;
+  }
+
+  private T remove(Node<T> node, Node<T> prev) {
+    if (node.next == null) return removeLast();
+
+    if (prev == null) {
+      head = head.next;
+    } else {
+      prev.next = node.next;
+    }
 
     T data = node.data;
 
     node.data = null;
-    node = node.prev = node.next = null;
+    node.next = null;
 
-    --size;
+    size--;
 
     return data;
   }
@@ -165,33 +200,29 @@ public class DoublyLinkedList<T> implements Iterable<T> {
     int i;
     Node<T> trav;
 
-    if (index < size / 2) {
-      for (i = 0, trav = head; i != index; i++) {
-        trav = trav.next;
-      }
-    } else {
-      for (i = size - 1, trav = tail; i != index; i--) {
-        trav = trav.prev;
-      }
+    for (i = 0, trav = head; i != index; i++) {
+      trav = trav.next;
     }
+
     return remove(trav);
   }
 
   // Remove um valor particular na lista, O(n)
   public boolean remove(Object obj) {
     Node<T> trav = head;
+    Node<T> prev = null;
 
     if (obj == null) {
-      for(trav = head; trav != null; trav = trav.next) {
+      for (trav = head; trav != null; prev = trav, trav = trav.next) {
         if (trav.data == null) {
-          remove(trav);
+          remove(trav, prev);
           return true;
         }
       }
     } else {
-      for (trav = head; trav != null; trav = trav.next) {
+      for (trav = head; trav != null; prev = trav, trav = trav.next) {
         if (obj.equals(trav.data)) {
-          remove(trav);
+          remove(trav, prev);
           return true;
         }
       }
@@ -267,7 +298,7 @@ public class DoublyLinkedList<T> implements Iterable<T> {
 
   // Exemplo de uso
   public static void main(String[] args) {
-    DoublyLinkedList<Integer> ar = new DoublyLinkedList<Integer>();
+    SinglyLinkedList<Integer> ar = new SinglyLinkedList<Integer>();
     ar.add(3);
     ar.add(7);
     ar.add(6);
